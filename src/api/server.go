@@ -6,14 +6,12 @@ import (
 	"net/http"
 
 	"github.com/yashkp1234/MemeShop.git/api/router"
-	"github.com/yashkp1234/MemeShop.git/auto"
 	"github.com/yashkp1234/MemeShop.git/config"
 )
 
 //Run runs the server
 func Run() {
 	config.Load()
-	auto.Load()
 	fmt.Printf("Listening on [::]%d ... \n", config.PORT)
 	Listen(config.PORT)
 

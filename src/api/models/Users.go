@@ -18,6 +18,13 @@ type User struct {
 	UpdatedAt    time.Time          `json:"updated_at" bson:"updatedat"`
 }
 
+//SetUp sets the users information on creation
+func (u *User) SetUp() {
+	u.ID = primitive.NewObjectID()
+	u.CreatedAt = time.Now()
+	u.UpdatedAt = time.Now()
+}
+
 //HashPassword hashes password of user
 func (u *User) HashPassword() error {
 	hashedPassword, err := security.Hash(u.Password)
