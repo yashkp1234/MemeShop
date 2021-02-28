@@ -15,6 +15,8 @@ var (
 	MongoURL = ""
 	//JWTSecret for jwt encryption
 	JWTSecret = ""
+	//DBName for database
+	DBName = ""
 )
 
 //Load loads the configs from file
@@ -29,6 +31,7 @@ func Load() {
 		log.Fatal(err)
 	}
 
-	MongoURL = os.Getenv("MONGOURL")
+	MongoURL = os.Getenv("MONGO_URL")
 	JWTSecret = os.Getenv("JWTSECRET")
+	DBName = os.Getenv("DB_NAME")
 }

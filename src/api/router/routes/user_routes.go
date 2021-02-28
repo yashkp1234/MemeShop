@@ -1,8 +1,9 @@
 package routes
 
 import (
-	"api/controller"
 	"net/http"
+
+	"github.com/yashkp1234/MemeShop.git/api/controller"
 )
 
 //UsersRoutes represents all user routes

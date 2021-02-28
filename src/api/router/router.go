@@ -1,9 +1,8 @@
 package router
 
 import (
-	"api/router/routes"
-
 	"github.com/gorilla/mux"
+	"github.com/yashkp1234/MemeShop.git/api/router/routes"
 )
 
 // New returns a new route handler

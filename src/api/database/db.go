@@ -2,28 +2,30 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/yashkp1234/MemeShop.git/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 //Connect connects to the mongoDB client
-func Connect(clientURI string) (*mongo.Client, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+//and returns the database
+func Connect() (*mongo.Database, error) {
+	config.Load()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(clientURI))
+	client, err := mongo.NewClient(options.Client().ApplyURI(config.MongoURL))
 	if err != nil {
 		return nil, err
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	err = client.Connect(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("Connected to MongoDB!")
-	return client, nil
+	return client.Database(config.DBName), nil
 }
