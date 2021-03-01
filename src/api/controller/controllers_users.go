@@ -16,18 +16,15 @@ import (
 
 // GetUser lists a single user
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	//Read id from req
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	//Get database connection
 	db, err := database.Connect()
 	if err != nil {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	//Create crud repo
 	repo := crud.NewRepositoryUsersCRUD(db)
 
 	func(usersRepository repository.UserRepository) {
@@ -44,14 +41,12 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 
 // CreateUser creates a user
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	//Read body of request
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
-	//Create a user object
 	user := models.User{}
 	err = json.Unmarshal(body, &user)
 	if err != nil {
@@ -59,7 +54,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Get database connection
 	db, err := database.Connect()
 	if err != nil {
 		responses.ERROR(w, http.StatusInternalServerError, err)
@@ -81,18 +75,15 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUser updates a user
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	//Read id from req
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	//Read body of request
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
-	//Create a user object
 	user := models.User{}
 	err = json.Unmarshal(body, &user)
 	if err != nil {
@@ -100,19 +91,24 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Get database connection
+	updatingPassword := user.Password != ""
+	err = user.Validate(updatingPassword)
+	if err != nil {
+		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
 	db, err := database.Connect()
 	if err != nil {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	//Create crud repo
 	repo := crud.NewRepositoryUsersCRUD(db)
 
 	func(usersRepository repository.UserRepository) {
 		//Find user
-		err := usersRepository.Update(id, user.Password != "", user)
+		err := usersRepository.Update(id, updatingPassword, user)
 		if err != nil {
 			responses.ERROR(w, http.StatusUnprocessableEntity, err)
 			return
@@ -124,18 +120,15 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 // DeleteUser deletes a user
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	//Read id from req
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	//Get database connection
 	db, err := database.Connect()
 	if err != nil {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	//Create crud repo
 	repo := crud.NewRepositoryUsersCRUD(db)
 
 	func(usersRepository repository.UserRepository) {

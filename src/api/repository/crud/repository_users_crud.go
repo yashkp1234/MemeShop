@@ -26,19 +26,17 @@ func (r *RepositoryUsersCRUD) Save(user models.User) (models.User, error) {
 	var err error
 	done := make(chan bool)
 	go func(ch chan<- bool) {
-		//Create a context
+		defer close(ch)
+
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		//Hash Password and setup user on creation
-		err = user.HashPassword()
+		err = user.SetUp()
 		if err != nil {
 			ch <- false
 			return
 		}
-		user.SetUp()
 
-		//Insert into db
 		_, err = r.db.InsertOne(ctx, user)
 		if err != nil {
 			ch <- false
@@ -47,12 +45,10 @@ func (r *RepositoryUsersCRUD) Save(user models.User) (models.User, error) {
 		ch <- true
 	}(done)
 
-	//Return user if no errors
 	if channels.OK(done) {
 		return user, nil
 	}
 
-	//Return error
 	return models.User{}, err
 }
 
@@ -69,11 +65,11 @@ func (r *RepositoryUsersCRUD) FindByID(id string) (models.User, error) {
 	done := make(chan bool)
 
 	go func(ch chan<- bool) {
-		//Create a context
+		defer close(ch)
+
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		//Find in DB
 		if err = r.db.FindOne(ctx, bson.M{"_id": objID}).Decode(&user); err != nil {
 			ch <- false
 			return
@@ -81,33 +77,29 @@ func (r *RepositoryUsersCRUD) FindByID(id string) (models.User, error) {
 		ch <- true
 	}(done)
 
-	//Return user if no errors
 	if channels.OK(done) {
 		return user, nil
 	}
 
-	//Return error
 	return models.User{}, err
 }
 
 //Delete deletes a user from db
 func (r *RepositoryUsersCRUD) Delete(id string) (string, error) {
-	//Create id from string
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return "", err
 	}
 
-	//Init variables
 	var user models.User
 	done := make(chan bool)
 
 	go func(ch chan<- bool) {
-		//Create a context
+		defer close(ch)
+
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		//Find in DB
 		if err = r.db.FindOneAndDelete(ctx, bson.M{"_id": objID}).Decode(&user); err != nil {
 			ch <- false
 			return
@@ -115,34 +107,32 @@ func (r *RepositoryUsersCRUD) Delete(id string) (string, error) {
 		ch <- true
 	}(done)
 
-	//Return user if no errors
 	if channels.OK(done) {
 		return id, nil
 	}
 
-	//Return error
 	return "", err
 }
 
 //Update updates a user from db
 func (r *RepositoryUsersCRUD) Update(id string, changePassword bool, user models.User) error {
-	//Create id from string
+
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
 
-	//Init variables
 	done := make(chan bool)
 
 	go func(ch chan<- bool) {
-		//Create a context
+		defer close(ch)
+
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		updateFields := bson.M{
-			"username":  user.UserName,
-			"updatedat": time.Now(),
+			"username":   user.UserName,
+			"updated_at": time.Now(),
 		}
 		if changePassword {
 			user.HashPassword()
@@ -150,7 +140,6 @@ func (r *RepositoryUsersCRUD) Update(id string, changePassword bool, user models
 		}
 		update := bson.M{"$set": updateFields}
 
-		//Update in DB
 		if err = r.db.FindOneAndUpdate(ctx, bson.M{"_id": objID}, update).Decode(&user); err != nil {
 			ch <- false
 			return
@@ -158,11 +147,9 @@ func (r *RepositoryUsersCRUD) Update(id string, changePassword bool, user models
 		ch <- true
 	}(done)
 
-	//Return user if no errors
 	if channels.OK(done) {
 		return nil
 	}
 
-	//Return error
 	return err
 }
