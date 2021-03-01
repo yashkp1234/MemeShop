@@ -9,11 +9,6 @@ import (
 //UsersRoutes represents all user routes
 var UsersRoutes = []Route{
 	{
-		URI:     "/users",
-		Method:  http.MethodGet,
-		Handler: controller.GetUsers,
-	},
-	{
 		URI:     "/users/{id}",
 		Method:  http.MethodGet,
 		Handler: controller.GetUser,

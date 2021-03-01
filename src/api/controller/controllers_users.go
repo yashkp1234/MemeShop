@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/yashkp1234/MemeShop.git/api/database"
 	"github.com/yashkp1234/MemeShop.git/api/models"
 	"github.com/yashkp1234/MemeShop.git/api/repository"
@@ -13,14 +14,32 @@ import (
 	"github.com/yashkp1234/MemeShop.git/api/responses"
 )
 
-// GetUsers lists all users
-func GetUsers(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("List Users"))
-}
-
 // GetUser lists a single user
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("List User"))
+	//Read id from req
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	//Get database connection
+	db, err := database.Connect()
+	if err != nil {
+		responses.ERROR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	//Create crud repo
+	repo := crud.NewRepositoryUsersCRUD(db)
+
+	func(usersRepository repository.UserRepository) {
+		//Find user
+		user, err := usersRepository.FindByID(id)
+		if err != nil {
+			responses.ERROR(w, http.StatusUnprocessableEntity, err)
+			return
+		}
+		w.Header().Set("Location", fmt.Sprintf("%s%s/%d", r.Host, r.RequestURI, user.ID))
+		responses.JSON(w, http.StatusCreated, user)
+	}(repo)
 }
 
 // CreateUser creates a user
@@ -62,10 +81,71 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUser updates a user
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Update User"))
+	//Read id from req
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	//Read body of request
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	//Create a user object
+	user := models.User{}
+	err = json.Unmarshal(body, &user)
+	if err != nil {
+		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	//Get database connection
+	db, err := database.Connect()
+	if err != nil {
+		responses.ERROR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	//Create crud repo
+	repo := crud.NewRepositoryUsersCRUD(db)
+
+	func(usersRepository repository.UserRepository) {
+		//Find user
+		err := usersRepository.Update(id, user.Password != "", user)
+		if err != nil {
+			responses.ERROR(w, http.StatusUnprocessableEntity, err)
+			return
+		}
+		w.Header().Set("Location", fmt.Sprintf("%s%s/%s", r.Host, r.RequestURI, id))
+		responses.JSON(w, http.StatusCreated, id)
+	}(repo)
 }
 
 // DeleteUser deletes a user
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Delete User"))
+	//Read id from req
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	//Get database connection
+	db, err := database.Connect()
+	if err != nil {
+		responses.ERROR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	//Create crud repo
+	repo := crud.NewRepositoryUsersCRUD(db)
+
+	func(usersRepository repository.UserRepository) {
+		//Find user
+		id, err := usersRepository.Delete(id)
+		if err != nil {
+			responses.ERROR(w, http.StatusUnprocessableEntity, err)
+			return
+		}
+		w.Header().Set("Location", fmt.Sprintf("%s%s/%s", r.Host, r.RequestURI, id))
+		responses.JSON(w, http.StatusCreated, id)
+	}(repo)
 }
