@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/yashkp1234/MemeShop.git/api/database"
 	"github.com/yashkp1234/MemeShop.git/api/router"
 	"github.com/yashkp1234/MemeShop.git/config"
 )
@@ -12,9 +13,10 @@ import (
 //Run runs the server
 func Run() {
 	config.Load()
+	database.NewDatabase()
+	defer database.CancelDB()
 	fmt.Printf("Listening on [::]%d ... \n", config.PORT)
 	Listen(config.PORT)
-
 }
 
 //Listen creates a server and listens

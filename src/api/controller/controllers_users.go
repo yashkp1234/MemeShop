@@ -19,12 +19,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	db, err := database.Connect()
-	if err != nil {
-		responses.ERROR(w, http.StatusInternalServerError, err)
-		return
-	}
-
+	db := database.Connect()
 	repo := crud.NewRepositoryUsersCRUD(db)
 
 	func(usersRepository repository.UserRepository) {
@@ -54,12 +49,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := database.Connect()
-	if err != nil {
-		responses.ERROR(w, http.StatusInternalServerError, err)
-		return
-	}
-
+	db := database.Connect()
 	repo := crud.NewRepositoryUsersCRUD(db)
 
 	func(usersRepository repository.UserRepository) {
@@ -98,12 +88,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := database.Connect()
-	if err != nil {
-		responses.ERROR(w, http.StatusInternalServerError, err)
-		return
-	}
-
+	db := database.Connect()
 	repo := crud.NewRepositoryUsersCRUD(db)
 
 	func(usersRepository repository.UserRepository) {
@@ -123,12 +108,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	db, err := database.Connect()
-	if err != nil {
-		responses.ERROR(w, http.StatusInternalServerError, err)
-		return
-	}
-
+	db := database.Connect()
 	repo := crud.NewRepositoryUsersCRUD(db)
 
 	func(usersRepository repository.UserRepository) {

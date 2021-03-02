@@ -11,10 +11,7 @@ import (
 //Load loads data into database
 func Load() {
 	//Connect to db
-	db, err := database.Connect()
-	if err != nil {
-		log.Fatal(err)
-	}
+	db := database.Connect()
 	collection := db.Collection("users")
 
 	for _, user := range users {

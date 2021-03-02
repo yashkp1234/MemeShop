@@ -2,30 +2,48 @@ package database
 
 import (
 	"context"
-	"time"
+	"fmt"
+	"log"
 
 	"github.com/yashkp1234/MemeShop.git/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-//Connect connects to the mongoDB client
-//and returns the database
-func Connect() (*mongo.Database, error) {
-	config.Load()
+//DBInstance represents a DB instance
+var dbInstance *mongo.Database
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(config.MongoURL))
+//NewDatabase setups creating a databse connection
+func NewDatabase() {
+	var err error
+	dbInstance, err = connectToMongo()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+//CancelDB disconnects with the database
+func CancelDB() {
+	dbInstance.Client().Disconnect(context.Background())
+}
+
+//Connect returns the connected client
+func Connect() *mongo.Database {
+	return dbInstance
+}
+
+//connectToMongo actually connects to mongoDB
+func connectToMongo() (*mongo.Database, error) {
+	var err error
+	session, err := mongo.NewClient(options.Client().ApplyURI(config.MongoURL))
+	fmt.Println("Recconected with db")
+	if err != nil {
+		return nil, err
+	}
+	session.Connect(context.TODO())
 	if err != nil {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	err = client.Connect(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return client.Database(config.DBName), nil
+	return session.Database(config.DBName), nil
 }

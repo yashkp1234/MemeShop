@@ -116,7 +116,6 @@ func (r *RepositoryUsersCRUD) Delete(id string) (string, error) {
 
 //Update updates a user from db
 func (r *RepositoryUsersCRUD) Update(id string, changePassword bool, user models.User) error {
-
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
