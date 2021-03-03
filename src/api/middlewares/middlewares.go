@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/yashkp1234/MemeShop.git/api/auth"
+	"github.com/yashkp1234/MemeShop.git/api/responses"
 )
 
 //SetMiddlewareLogger sets up the next middleware logger
@@ -19,6 +22,17 @@ func SetMiddlewareLogger(next http.HandlerFunc) http.HandlerFunc {
 func SetMiddlewareJSON(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		next(w, r)
+	}
+}
+
+//SetMiddlewareAuth authenticates the req
+func SetMiddlewareAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := auth.ValidateToken(r)
+		if err != nil {
+			responses.ERROR(w, http.StatusUnauthorized, err)
+		}
 		next(w, r)
 	}
 }

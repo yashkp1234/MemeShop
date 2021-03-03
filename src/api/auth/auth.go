@@ -7,27 +7,41 @@ import (
 	"github.com/yashkp1234/MemeShop.git/api/database"
 	"github.com/yashkp1234/MemeShop.git/api/models"
 	"github.com/yashkp1234/MemeShop.git/api/security"
+	"github.com/yashkp1234/MemeShop.git/api/utils/channels"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 //SignIn handles the sign in for a user
 func SignIn(username, password string) (string, error) {
-	db := database.Connect()
-
 	var user models.User
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	var err error
+	db := database.Connect()
+	done := make(chan bool)
 
-	filter := bson.M{"username": username}
-	if err := db.Collection("users").FindOne(ctx, filter).Decode(&user); err != nil {
-		return "", err
+	go func(ch chan<- bool) {
+		defer close(ch)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		filter := bson.M{"username": username}
+		if err = db.Collection("users").FindOne(ctx, filter).Decode(&user); err != nil {
+			ch <- false
+			return
+		}
+
+		err = security.VerifyPassword(user.Password, password)
+		if err != nil {
+			ch <- false
+			return
+		}
+		ch <- true
+	}(done)
+
+	if channels.OK(done) {
+		return CreateToken(user.ID.Hex())
 	}
 
-	err := security.VerifyPassword(user.Password, password)
-	if err != nil {
-		return "", err
-	}
-
-	return CreateToken(user.ID)
+	return "", err
 
 }
