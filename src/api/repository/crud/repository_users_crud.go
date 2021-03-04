@@ -2,6 +2,7 @@ package crud
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/yashkp1234/MemeShop.git/api/models"
@@ -33,6 +34,12 @@ func (r *RepositoryUsersCRUD) Save(user models.User) (models.User, error) {
 
 		err = user.SetUp()
 		if err != nil {
+			ch <- false
+			return
+		}
+
+		if err = r.db.FindOne(ctx, bson.M{"username": user.UserName}).Err(); err == nil {
+			err = errors.New("Username already exists")
 			ch <- false
 			return
 		}

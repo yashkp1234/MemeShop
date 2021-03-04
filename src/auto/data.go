@@ -10,24 +10,20 @@ import (
 //GenerateUser generates a user
 func GenerateUser(userName string, Password string) models.User {
 	return models.User{
-		ID:           primitive.NewObjectID(),
-		UserName:     userName,
-		Password:     Password,
-		Token:        "b",
-		RefreshToken: "a",
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		ID:        primitive.NewObjectID(),
+		UserName:  userName,
+		Password:  Password,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 }
 
 var users = []models.User{
 	{
-		ID:           primitive.NewObjectID(),
-		UserName:     "asdasd",
-		Password:     "testing",
-		Token:        "b",
-		RefreshToken: "a",
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		ID:        primitive.NewObjectID(),
+		UserName:  "asdasd",
+		Password:  "testing",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	},
 }

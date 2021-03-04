@@ -10,14 +10,13 @@ import (
 
 //User is the model that represents a user object
 type User struct {
-	ID           primitive.ObjectID   `json:"id" bson:"_id"`
-	UserName     string               `json:"username" bson:"username"`
-	Password     string               `json:"password" bson:"password"`
-	Token        string               `json:"token" bson:"token"`
-	RefreshToken string               `json:"refresh_token" bson:"refresh_token"`
-	CreatedAt    time.Time            `json:"created_at" bson:"created_at"`
-	UpdatedAt    time.Time            `json:"updated_at" bson:"updated_at"`
-	Pictures     []primitive.ObjectID `json:"pictures,omitempty" bson:"pictures,omitempty"`
+	ID        primitive.ObjectID   `json:"id" bson:"_id"`
+	UserName  string               `json:"username" bson:"username"`
+	Password  string               `json:"password" bson:"password"`
+	CreatedAt time.Time            `json:"created_at" bson:"created_at"`
+	UpdatedAt time.Time            `json:"updated_at" bson:"updated_at"`
+	Pictures  []primitive.ObjectID `json:"pictures,omitempty" bson:"pictures,omitempty"`
+	Balance   int32                `json:"balance" bson:"balance"`
 }
 
 const (
@@ -34,6 +33,9 @@ func (u *User) Validate(pass bool) error {
 	}
 	if len(u.UserName) < MinUserLength {
 		return errors.New("Username is too short")
+	}
+	if u.Balance > 0 {
+		return errors.New("Cannot set balance on a user")
 	}
 	return nil
 }

@@ -2,6 +2,8 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -33,7 +35,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	token, err := auth.SignIn(user.UserName, user.Password)
 	if err != nil {
-		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		fmt.Println(err)
+		responses.ERROR(w, http.StatusUnprocessableEntity, errors.New("Invalid username or password"))
 		return
 	}
 

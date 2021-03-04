@@ -16,7 +16,25 @@ type Picture struct {
 	ForSale   bool               `json:"for_sale" bson:"for_sale"`
 	Title     string             `json:"title" bson:"title"`
 	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
-	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
+}
+
+//ValidatePictureUpdate validates a picture update map
+func ValidatePictureUpdate(updates map[string]string) error {
+	for k, v := range updates {
+		switch k {
+		case "title":
+			if v == "" {
+				return errors.New("Title cannot be empty")
+			}
+		case "user":
+			if v == "" {
+				return errors.New("Picture must be owned by a user")
+			}
+		default:
+			return errors.New("Invalid key sent")
+		}
+	}
+	return nil
 }
 
 //Validate validates a picture struct
@@ -43,6 +61,5 @@ func (p *Picture) SetUp() error {
 	//Setup user
 	p.ID = primitive.NewObjectID()
 	p.CreatedAt = time.Now()
-	p.UpdatedAt = time.Now()
 	return nil
 }

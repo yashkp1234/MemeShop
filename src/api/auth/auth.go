@@ -39,7 +39,7 @@ func SignIn(username, password string) (string, error) {
 	}(done)
 
 	if channels.OK(done) {
-		return CreateToken(user.ID.Hex())
+		return CreateToken(user.ID.Hex(), username)
 	}
 
 	return "", err

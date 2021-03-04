@@ -13,10 +13,11 @@ import (
 )
 
 //CreateToken creates a JWT token based on user id
-func CreateToken(userID string) (string, error) {
+func CreateToken(userID string, username string) (string, error) {
 	claims := jwt.MapClaims{
 		"authorized": true,
 		"user_id":    userID,
+		"username":   username,
 		"exp":        time.Now().Add(time.Hour * 2).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -24,7 +25,7 @@ func CreateToken(userID string) (string, error) {
 }
 
 //ValidateToken validates a token
-func ValidateToken(r *http.Request) error {
+func ValidateToken(r *http.Request) (string, error) {
 	tokenString := ExtractToken(r)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -34,23 +35,24 @@ func ValidateToken(r *http.Request) error {
 	})
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if ok && token.Valid {
 		vars := mux.Vars(r)
 		id := vars["id"]
 		uid, err := claims["user_id"].(string)
 
 		if !err {
-			return errors.New("Cannot find user_id in jwt claims")
+			return "", errors.New("Cannot find user_id in jwt claims")
 		}
 
 		if uid != id {
-			return errors.New("Authorization error")
+			return "", errors.New("Authorization error")
 		}
 	}
-	return nil
+	return claims["username"].(string), nil
 }
 
 //ExtractToken get the token from the request
