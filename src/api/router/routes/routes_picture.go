@@ -9,25 +9,25 @@ import (
 //PicturesRoutes represents all picture routes
 var PicturesRoutes = []Route{
 	{
-		URI:          "/pictures/{id}/{pid}",
+		URI:          "/pictures/{pid}",
 		Method:       http.MethodGet,
 		Handler:      controller.GetPicture,
 		AuthRequired: true,
 	},
 	{
-		URI:          "/pictures/{id}",
+		URI:          "/pictures",
 		Method:       http.MethodPost,
 		Handler:      controller.CreatePicture,
 		AuthRequired: true,
 	},
 	{
-		URI:          "/pictures/{id}/{pid}",
+		URI:          "/pictures/{pid}",
 		Method:       http.MethodPut,
 		Handler:      controller.UpdatePicture,
 		AuthRequired: true,
 	},
 	{
-		URI:          "/pictures/{id}/{pid}",
+		URI:          "/pictures/{pid}",
 		Method:       http.MethodDelete,
 		Handler:      controller.DeletePicture,
 		AuthRequired: true,

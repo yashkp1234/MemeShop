@@ -1,14 +1,12 @@
 package middlewares
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/yashkp1234/MemeShop.git/api/auth"
 	"github.com/yashkp1234/MemeShop.git/api/responses"
-	"github.com/yashkp1234/MemeShop.git/api/utils/contextkey"
 )
 
 //SetMiddlewareLogger sets up the next middleware logger
@@ -31,12 +29,11 @@ func SetMiddlewareJSON(next http.HandlerFunc) http.HandlerFunc {
 //SetMiddlewareAuth authenticates the req
 func SetMiddlewareAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		username, err := auth.ValidateToken(r)
+		response, err := auth.ValidateToken(r)
 		if err != nil {
 			responses.ERROR(w, http.StatusUnauthorized, err)
 			return
 		}
-		ctx := context.WithValue(r.Context(), contextkey.ContextKeyUsernameCaller, username)
-		next(w, r.WithContext(ctx))
+		next(w, response)
 	}
 }

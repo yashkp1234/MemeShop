@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/aws/aws-sdk-go v1.37.20 // indirect
+	github.com/corona10/goimagehash v1.0.3
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/gorilla/mux v1.8.0

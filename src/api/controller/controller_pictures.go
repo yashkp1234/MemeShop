@@ -2,11 +2,12 @@ package controller
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"image/jpeg"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/corona10/goimagehash"
 	"github.com/gorilla/mux"
 	"github.com/yashkp1234/MemeShop.git/api/database"
 	"github.com/yashkp1234/MemeShop.git/api/models"
@@ -16,12 +17,28 @@ import (
 	"github.com/yashkp1234/MemeShop.git/api/utils/contextkey"
 )
 
-func getUsername(w http.ResponseWriter, r *http.Request) (string, error) {
-	username, err := contextkey.GetCallerFromContext(r.Context())
-	if !err {
-		return "", errors.New("No username found in ctx")
+func readPictureFromReq(r *http.Request) (string, error) {
+	// Get handler for filename, size and headers
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		return "", err
 	}
-	return username, nil
+
+	defer file.Close()
+	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
+
+	img, err := jpeg.Decode(file)
+	if err != nil {
+		return "", err
+	}
+
+	hash, err := goimagehash.DifferenceHash(img)
+	if err != nil {
+		return "", err
+	}
+
+	return hash.ToString(), nil
+
 }
 
 // GetPicture lists a single picture
@@ -29,7 +46,7 @@ func GetPicture(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pictureID := vars["pid"]
 
-	username, err := getUsername(w, r)
+	username, err := contextkey.GetUsernameFromContext(r)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
@@ -52,14 +69,24 @@ func GetPicture(w http.ResponseWriter, r *http.Request) {
 
 // CreatePicture creates a picture
 func CreatePicture(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
+	r.ParseMultipartForm(32 << 20)
+
+	body := r.MultipartForm.Value["request"][0]
+
+	picture := models.Picture{}
+	err := json.Unmarshal([]byte(body), &picture)
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	picture.User, err = contextkey.GetUsernameFromContext(r)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
-	picture := models.Picture{}
-	err = json.Unmarshal(body, &picture)
+	picture.Hash, err = readPictureFromReq(r)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
@@ -102,7 +129,7 @@ func UpdatePicture(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username, err := getUsername(w, r)
+	username, err := contextkey.GetUsernameFromContext(r)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
@@ -128,7 +155,7 @@ func DeletePicture(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["pid"]
 
-	username, err := getUsername(w, r)
+	username, err := contextkey.GetUsernameFromContext(r)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return

@@ -9,10 +9,10 @@ import (
 //UsersRoutes represents all user routes
 var UsersRoutes = []Route{
 	{
-		URI:          "/users/{id}",
+		URI:          "/users",
 		Method:       http.MethodGet,
 		Handler:      controller.GetUser,
-		AuthRequired: false,
+		AuthRequired: true,
 	},
 	{
 		URI:          "/users",
@@ -21,13 +21,13 @@ var UsersRoutes = []Route{
 		AuthRequired: false,
 	},
 	{
-		URI:          "/users/{id}",
+		URI:          "/users",
 		Method:       http.MethodPut,
 		Handler:      controller.UpdateUser,
 		AuthRequired: true,
 	},
 	{
-		URI:          "/users/{id}",
+		URI:          "/users",
 		Method:       http.MethodDelete,
 		Handler:      controller.DeleteUser,
 		AuthRequired: true,

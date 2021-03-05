@@ -6,18 +6,21 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/yashkp1234/MemeShop.git/api/database"
 	"github.com/yashkp1234/MemeShop.git/api/models"
 	"github.com/yashkp1234/MemeShop.git/api/repository"
 	"github.com/yashkp1234/MemeShop.git/api/repository/crud"
 	"github.com/yashkp1234/MemeShop.git/api/responses"
+	"github.com/yashkp1234/MemeShop.git/api/utils/contextkey"
 )
 
 // GetUser lists a single user
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id, err := contextkey.GetUserIDFromContext(r)
+	if err != nil {
+		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
 
 	db := database.Connect()
 	repo := crud.NewRepositoryUsersCRUD(db)
@@ -65,8 +68,11 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUser updates a user
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id, err := contextkey.GetUserIDFromContext(r)
+	if err != nil {
+		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -105,8 +111,11 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 // DeleteUser deletes a user
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id, err := contextkey.GetUserIDFromContext(r)
+	if err != nil {
+		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
 
 	db := database.Connect()
 	repo := crud.NewRepositoryUsersCRUD(db)

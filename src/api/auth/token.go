@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -8,7 +9,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gorilla/mux"
+	"github.com/yashkp1234/MemeShop.git/api/utils/contextkey"
 	"github.com/yashkp1234/MemeShop.git/config"
 )
 
@@ -25,7 +26,7 @@ func CreateToken(userID string, username string) (string, error) {
 }
 
 //ValidateToken validates a token
-func ValidateToken(r *http.Request) (string, error) {
+func ValidateToken(r *http.Request) (*http.Request, error) {
 	tokenString := ExtractToken(r)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -33,26 +34,24 @@ func ValidateToken(r *http.Request) (string, error) {
 		}
 		return []byte(config.JWTSecret), nil
 	})
-
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
-	if ok && token.Valid {
-		vars := mux.Vars(r)
-		id := vars["id"]
-		uid, err := claims["user_id"].(string)
-
-		if !err {
-			return "", errors.New("Cannot find user_id in jwt claims")
-		}
-
-		if uid != id {
-			return "", errors.New("Authorization error")
-		}
+	if !ok || !token.Valid {
+		return nil, errors.New("Errors processing JWT claims")
 	}
-	return claims["username"].(string), nil
+
+	uid, ok := claims["user_id"].(string)
+	if !ok {
+		return nil, errors.New("Cannot find user_id in jwt claims")
+	}
+
+	ctx := context.WithValue(r.Context(), contextkey.ContextKeyUsernameCaller, claims["username"].(string))
+	ctx2 := context.WithValue(ctx, contextkey.ContextKeyUserIDCaller, uid)
+
+	return r.WithContext(ctx2), nil
 }
 
 //ExtractToken get the token from the request
@@ -67,5 +66,6 @@ func ExtractToken(r *http.Request) string {
 	if len(strings.Split(bearerToken, " ")) == 2 {
 		return strings.Split(bearerToken, " ")[1]
 	}
+
 	return ""
 }
