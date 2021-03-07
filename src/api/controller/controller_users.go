@@ -87,9 +87,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatingPassword := user.Password != ""
-	err = user.Validate(updatingPassword)
-	if err != nil {
+	if err := user.ValidateUpdate(); err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
@@ -99,7 +97,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	func(usersRepository repository.UserRepository) {
 		//Find user
-		err := usersRepository.Update(id, updatingPassword, user)
+		err := usersRepository.Update(id, user)
 		if err != nil {
 			responses.ERROR(w, http.StatusUnprocessableEntity, err)
 			return

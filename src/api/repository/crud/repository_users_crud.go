@@ -122,7 +122,7 @@ func (r *RepositoryUsersCRUD) Delete(id string) (string, error) {
 }
 
 //Update updates a user from db
-func (r *RepositoryUsersCRUD) Update(id string, changePassword bool, user models.User) error {
+func (r *RepositoryUsersCRUD) Update(id string, user models.User) error {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -136,13 +136,11 @@ func (r *RepositoryUsersCRUD) Update(id string, changePassword bool, user models
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
+		user.HashPassword()
+
 		updateFields := bson.M{
-			"username":   user.UserName,
+			"password":   user.Password,
 			"updated_at": time.Now(),
-		}
-		if changePassword {
-			user.HashPassword()
-			updateFields["password"] = user.Password
 		}
 		update := bson.M{"$set": updateFields}
 

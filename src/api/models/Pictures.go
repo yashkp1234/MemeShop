@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 type Picture struct {
 	ID        primitive.ObjectID `json:"id" bson:"_id"`
 	URL       string             `json:"url" bson:"url"`
-	Hash      string             `json:"hash" bson:"hash"`
+	HashKey   string             `json:"hash_key" bson:"hash_key"`
 	User      string             `json:"user" bson:"user"`
 	ForSale   bool               `json:"for_sale" bson:"for_sale"`
 	Title     string             `json:"title" bson:"title"`
@@ -45,9 +46,6 @@ func (p *Picture) Validate() error {
 	if p.User == "" {
 		return errors.New("Picture must be owned by a user")
 	}
-	if p.URL == "" && p.Hash == "" {
-		return errors.New("Picture must have a hash source or url source")
-	}
 	return nil
 }
 
@@ -62,4 +60,9 @@ func (p *Picture) SetUp() error {
 	p.ID = primitive.NewObjectID()
 	p.CreatedAt = time.Now()
 	return nil
+}
+
+//MarshalBinary marshals a picture into binary
+func (p Picture) MarshalBinary() ([]byte, error) {
+	return json.Marshal(p)
 }

@@ -3,13 +3,13 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	"image/jpeg"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 
-	"github.com/corona10/goimagehash"
 	"github.com/gorilla/mux"
 	"github.com/yashkp1234/MemeShop.git/api/database"
+	"github.com/yashkp1234/MemeShop.git/api/imagecache"
 	"github.com/yashkp1234/MemeShop.git/api/models"
 	"github.com/yashkp1234/MemeShop.git/api/repository"
 	"github.com/yashkp1234/MemeShop.git/api/repository/crud"
@@ -17,28 +17,13 @@ import (
 	"github.com/yashkp1234/MemeShop.git/api/utils/contextkey"
 )
 
-func readPictureFromReq(r *http.Request) (string, error) {
+func readPictureFromReq(r *http.Request) (*multipart.File, *multipart.FileHeader, error) {
 	// Get handler for filename, size and headers
 	file, handler, err := r.FormFile("file")
 	if err != nil {
-		return "", err
+		return nil, nil, err
 	}
-
-	defer file.Close()
-	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
-
-	img, err := jpeg.Decode(file)
-	if err != nil {
-		return "", err
-	}
-
-	hash, err := goimagehash.DifferenceHash(img)
-	if err != nil {
-		return "", err
-	}
-
-	return hash.ToString(), nil
-
+	return &file, handler, nil
 }
 
 // GetPicture lists a single picture
@@ -53,7 +38,8 @@ func GetPicture(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := database.Connect()
-	repo := crud.NewRepositoryPicturesCRUD(db)
+	imgCache := imagecache.Connect()
+	repo := crud.NewRepositoryPicturesCRUD(db, imgCache)
 
 	func(picturesRepository repository.PictureRepository) {
 		//Find picture
@@ -82,25 +68,27 @@ func CreatePicture(w http.ResponseWriter, r *http.Request) {
 
 	picture.User, err = contextkey.GetUsernameFromContext(r)
 	if err != nil {
-		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		responses.ERROR(w, http.StatusBadRequest, err)
 		return
 	}
 
-	picture.Hash, err = readPictureFromReq(r)
+	file, handler, err := readPictureFromReq(r)
 	if err != nil {
-		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		responses.ERROR(w, http.StatusBadRequest, err)
 		return
 	}
 
 	db := database.Connect()
-	repo := crud.NewRepositoryPicturesCRUD(db)
+	imgCache := imagecache.Connect()
+	repo := crud.NewRepositoryPicturesCRUD(db, imgCache)
 
 	func(picturesRepository repository.PictureRepository) {
-		picture, err := picturesRepository.Save(picture)
+		picture, err := picturesRepository.Save(picture, file, handler)
 		if err != nil {
 			responses.ERROR(w, http.StatusUnprocessableEntity, err)
 			return
 		}
+
 		w.Header().Set("Location", fmt.Sprintf("%s%s/%d", r.Host, r.RequestURI, picture.ID))
 		responses.JSON(w, http.StatusCreated, picture)
 	}(repo)
@@ -136,7 +124,8 @@ func UpdatePicture(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := database.Connect()
-	repo := crud.NewRepositoryPicturesCRUD(db)
+	imgCache := imagecache.Connect()
+	repo := crud.NewRepositoryPicturesCRUD(db, imgCache)
 
 	func(picturesRepository repository.PictureRepository) {
 		//Find picture
@@ -162,7 +151,8 @@ func DeletePicture(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := database.Connect()
-	repo := crud.NewRepositoryPicturesCRUD(db)
+	imgCache := imagecache.Connect()
+	repo := crud.NewRepositoryPicturesCRUD(db, imgCache)
 
 	func(picturesRepository repository.PictureRepository) {
 		//Find picture

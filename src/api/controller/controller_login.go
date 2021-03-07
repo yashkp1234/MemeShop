@@ -27,8 +27,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = user.Validate(true)
-	if err != nil {
+	if err := user.ValidateCreation(); err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}

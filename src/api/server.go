@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/yashkp1234/MemeShop.git/api/database"
+	"github.com/yashkp1234/MemeShop.git/api/imagecache"
 	"github.com/yashkp1234/MemeShop.git/api/router"
 	"github.com/yashkp1234/MemeShop.git/config"
 )
@@ -13,8 +14,13 @@ import (
 //Run runs the server
 func Run() {
 	config.Load()
+
 	database.NewDatabase()
 	defer database.CancelDB()
+
+	imagecache.NewImageCacheClient()
+	defer imagecache.Cancel()
+
 	fmt.Printf("Listening on [::]%d ... \n", config.PORT)
 	Listen(config.PORT)
 }

@@ -26,9 +26,17 @@ const (
 	MinUserLength = 2
 )
 
-//Validate validates a user struct
-func (u *User) Validate(pass bool) error {
-	if pass && len(u.Password) < MinPassLength {
+//ValidateUpdate validates a user struct on update
+func (u *User) ValidateUpdate() error {
+	if len(u.Password) < MinPassLength {
+		return errors.New("Password is too short")
+	}
+	return nil
+}
+
+//ValidateCreation validates a user struct on creation
+func (u *User) ValidateCreation() error {
+	if len(u.Password) < MinPassLength {
 		return errors.New("Password is too short")
 	}
 	if len(u.UserName) < MinUserLength {
@@ -42,7 +50,7 @@ func (u *User) Validate(pass bool) error {
 
 //SetUp sets the users information on creation
 func (u *User) SetUp() error {
-	err := u.Validate(true)
+	err := u.ValidateCreation()
 	if err != nil {
 		return err
 	}

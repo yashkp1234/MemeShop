@@ -36,7 +36,7 @@ func Connect() *mongo.Database {
 func connectToMongo() (*mongo.Database, error) {
 	var err error
 	session, err := mongo.NewClient(options.Client().ApplyURI(config.MongoURL))
-	fmt.Println("Recconected with db")
+	fmt.Println("Connected with db")
 	if err != nil {
 		return nil, err
 	}

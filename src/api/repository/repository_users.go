@@ -7,6 +7,6 @@ import "github.com/yashkp1234/MemeShop.git/api/models"
 type UserRepository interface {
 	Save(models.User) (models.User, error)
 	FindByID(string) (models.User, error)
-	Update(string, bool, models.User) error
+	Update(string, models.User) error
 	Delete(string) (string, error)
 }

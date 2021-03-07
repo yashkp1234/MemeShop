@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/joho/godotenv"
@@ -21,7 +22,12 @@ var (
 
 //Load loads the configs from file
 func Load() {
-	err := godotenv.Load("../.env")
+	fp, err := filepath.Abs("../.env")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = godotenv.Load(fp)
 	if err != nil {
 		log.Fatal(err)
 	}
