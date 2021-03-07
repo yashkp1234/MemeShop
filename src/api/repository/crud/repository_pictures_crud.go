@@ -92,7 +92,7 @@ func (r *RepositoryPicturesCRUD) Save(picture models.Picture, file *multipart.Fi
 			return
 		}
 
-		id, err = r.imgCache.AddImage(hash, filename)
+		id, err = r.imgCache.AddImage(hash, picture.User+filename)
 		if err != nil {
 			err = errors.New("Unable to hash photo")
 			ch <- false
@@ -106,7 +106,7 @@ func (r *RepositoryPicturesCRUD) Save(picture models.Picture, file *multipart.Fi
 			return
 		}
 
-		url, err = r.imgCloud.UploadFile(&startFile, picture.User+handler.Filename)
+		url, err = r.imgCloud.UploadFile(&startFile, picture.ID.Hex())
 		if err != nil {
 			ch <- false
 			return
@@ -206,6 +206,11 @@ func (r *RepositoryPicturesCRUD) Delete(username string, idPicture string) (stri
 		if err = r.db.FindOneAndDelete(ctx, filter).Decode(&picture); err != nil {
 			fmt.Println(err)
 			err = errors.New("Error deleting picture, picture not found")
+			ch <- false
+			return
+		}
+
+		if err = r.imgCloud.DeleteFile(picture.ID.Hex()); err != nil {
 			ch <- false
 			return
 		}

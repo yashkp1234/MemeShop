@@ -59,7 +59,7 @@ func (r *RepositoryUsersCRUD) Save(user models.User) (models.User, error) {
 	return models.User{}, err
 }
 
-//FindByID saves a user onto database collection
+//FindByID finds a user by id
 func (r *RepositoryUsersCRUD) FindByID(id string) (models.User, error) {
 	//Create id from string
 	objID, err := primitive.ObjectIDFromHex(id)

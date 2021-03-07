@@ -49,6 +49,11 @@ func Disconnect() {
 	}
 }
 
+//DeleteFile deletes an uploaded file
+func (i *ImageCloudStore) DeleteFile(filename string) error {
+	return i.StorageClient.Bucket(bucketName).Object(filename).Delete(context.Background())
+}
+
 //UploadFile uploads a file
 func (i *ImageCloudStore) UploadFile(f *[]byte, filename string) (string, error) {
 	sw := i.StorageClient.Bucket(bucketName).Object(filename).NewWriter(context.Background())
