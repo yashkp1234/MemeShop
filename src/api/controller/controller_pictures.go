@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/yashkp1234/MemeShop.git/api/database"
+	"github.com/yashkp1234/MemeShop.git/api/gcp"
 	"github.com/yashkp1234/MemeShop.git/api/imagecache"
 	"github.com/yashkp1234/MemeShop.git/api/models"
 	"github.com/yashkp1234/MemeShop.git/api/repository"
@@ -39,7 +40,8 @@ func GetPicture(w http.ResponseWriter, r *http.Request) {
 
 	db := database.Connect()
 	imgCache := imagecache.Connect()
-	repo := crud.NewRepositoryPicturesCRUD(db, imgCache)
+	imgCloud := gcp.Connect()
+	repo := crud.NewRepositoryPicturesCRUD(db, imgCache, imgCloud)
 
 	func(picturesRepository repository.PictureRepository) {
 		//Find picture
@@ -80,7 +82,8 @@ func CreatePicture(w http.ResponseWriter, r *http.Request) {
 
 	db := database.Connect()
 	imgCache := imagecache.Connect()
-	repo := crud.NewRepositoryPicturesCRUD(db, imgCache)
+	imgCloud := gcp.Connect()
+	repo := crud.NewRepositoryPicturesCRUD(db, imgCache, imgCloud)
 
 	func(picturesRepository repository.PictureRepository) {
 		picture, err := picturesRepository.Save(picture, file, handler)
@@ -125,7 +128,8 @@ func UpdatePicture(w http.ResponseWriter, r *http.Request) {
 
 	db := database.Connect()
 	imgCache := imagecache.Connect()
-	repo := crud.NewRepositoryPicturesCRUD(db, imgCache)
+	imgCloud := gcp.Connect()
+	repo := crud.NewRepositoryPicturesCRUD(db, imgCache, imgCloud)
 
 	func(picturesRepository repository.PictureRepository) {
 		//Find picture
@@ -152,7 +156,8 @@ func DeletePicture(w http.ResponseWriter, r *http.Request) {
 
 	db := database.Connect()
 	imgCache := imagecache.Connect()
-	repo := crud.NewRepositoryPicturesCRUD(db, imgCache)
+	imgCloud := gcp.Connect()
+	repo := crud.NewRepositoryPicturesCRUD(db, imgCache, imgCloud)
 
 	func(picturesRepository repository.PictureRepository) {
 		//Find picture

@@ -1,6 +1,7 @@
 package crud
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,11 +9,13 @@ import (
 	"image"
 	_ "image/jpeg" //Image needs this
 	_ "image/png"  //Image needs this
+	"io"
 	"mime/multipart"
 	"strings"
 	"time"
 
 	"github.com/corona10/goimagehash"
+	"github.com/yashkp1234/MemeShop.git/api/gcp"
 	"github.com/yashkp1234/MemeShop.git/api/imagecache"
 	"github.com/yashkp1234/MemeShop.git/api/models"
 	"github.com/yashkp1234/MemeShop.git/api/utils/channels"
@@ -27,16 +30,17 @@ const cacheTime = imagecache.ImageCacheTime
 type RepositoryPicturesCRUD struct {
 	db       *mongo.Collection
 	imgCache *imagecache.ImageCache
+	imgCloud *gcp.ImageCloudStore
 }
 
 //NewRepositoryPicturesCRUD creates a new RepositoryPicturesCRUD object
-func NewRepositoryPicturesCRUD(db *mongo.Database, imgCache *imagecache.ImageCache) *RepositoryPicturesCRUD {
-	return &RepositoryPicturesCRUD{db.Collection("pictures"), imgCache}
+func NewRepositoryPicturesCRUD(db *mongo.Database, imgCache *imagecache.ImageCache, imgCloud *gcp.ImageCloudStore) *RepositoryPicturesCRUD {
+	return &RepositoryPicturesCRUD{db.Collection("pictures"), imgCache, imgCloud}
 }
 
 //Handles processing a file
-func handleFile(file *multipart.File, handler *multipart.FileHeader) (uint64, string, error) {
-	img, _, err := image.Decode(*file)
+func handleFile(file *[]byte, handler *multipart.FileHeader) (uint64, string, error) {
+	img, _, err := image.Decode(bytes.NewReader(*file))
 	if err != nil {
 		return 0, "", err
 	}
@@ -46,9 +50,6 @@ func handleFile(file *multipart.File, handler *multipart.FileHeader) (uint64, st
 		return 0, "", err
 	}
 
-	if err = (*file).Close(); err != nil {
-		return 0, "", err
-	}
 	return hash.GetHash()[0], strings.ReplaceAll(handler.Filename, " ", ""), nil
 }
 
@@ -63,9 +64,11 @@ func (r *RepositoryPicturesCRUD) Save(picture models.Picture, file *multipart.Fi
 		var hash uint64
 		var id string
 		var filename string
+		var url string
 		var ok bool
+		startFile, _ := io.ReadAll(*file)
 
-		hash, filename, err = handleFile(file, handler)
+		hash, filename, err = handleFile(&startFile, handler)
 		if err != nil {
 			ch <- false
 			return
@@ -102,6 +105,13 @@ func (r *RepositoryPicturesCRUD) Save(picture models.Picture, file *multipart.Fi
 			ch <- false
 			return
 		}
+
+		url, err = r.imgCloud.UploadFile(&startFile, picture.User+handler.Filename)
+		if err != nil {
+			ch <- false
+			return
+		}
+		picture.URL = url
 
 		_, err = r.db.InsertOne(ctx, picture)
 		if err != nil {

@@ -5,6 +5,7 @@
 *.so
 *.dylib
 .env
+keys.json
 
 # Test binary, built with `go test -c`
 *.test

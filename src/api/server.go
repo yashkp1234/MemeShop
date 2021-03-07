@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/yashkp1234/MemeShop.git/api/database"
+	"github.com/yashkp1234/MemeShop.git/api/gcp"
 	"github.com/yashkp1234/MemeShop.git/api/imagecache"
 	"github.com/yashkp1234/MemeShop.git/api/router"
 	"github.com/yashkp1234/MemeShop.git/config"
@@ -20,6 +21,9 @@ func Run() {
 
 	imagecache.NewImageCacheClient()
 	defer imagecache.Cancel()
+
+	gcp.NewStorageClient()
+	defer gcp.Disconnect()
 
 	fmt.Printf("Listening on [::]%d ... \n", config.PORT)
 	Listen(config.PORT)
