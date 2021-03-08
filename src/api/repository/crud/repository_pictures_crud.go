@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/corona10/goimagehash"
+	"github.com/yashkp1234/MemeShop.git/api/cache"
 	"github.com/yashkp1234/MemeShop.git/api/gcp"
-	"github.com/yashkp1234/MemeShop.git/api/imagecache"
 	"github.com/yashkp1234/MemeShop.git/api/models"
 	"github.com/yashkp1234/MemeShop.git/api/utils/channels"
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,18 +25,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const cacheTime = imagecache.ImageCacheTime
+const cacheTime = cache.CacheTime
 
 //RepositoryPicturesCRUD object to store Picture CRUD operations
 type RepositoryPicturesCRUD struct {
 	db       *mongo.Collection
-	imgCache *imagecache.ImageCache
+	cache    *cache.Cache
 	imgCloud *gcp.ImageCloudStore
 }
 
 //NewRepositoryPicturesCRUD creates a new RepositoryPicturesCRUD object
-func NewRepositoryPicturesCRUD(db *mongo.Database, imgCache *imagecache.ImageCache, imgCloud *gcp.ImageCloudStore) *RepositoryPicturesCRUD {
-	return &RepositoryPicturesCRUD{db.Collection("pictures"), imgCache, imgCloud}
+func NewRepositoryPicturesCRUD(db *mongo.Database, cache *cache.Cache, imgCloud *gcp.ImageCloudStore) *RepositoryPicturesCRUD {
+	return &RepositoryPicturesCRUD{db.Collection("pictures"), cache, imgCloud}
 }
 
 //Handles processing a file
@@ -74,15 +74,12 @@ func (r *RepositoryPicturesCRUD) Save(picture models.Picture, file *multipart.Fi
 			ch <- false
 			return
 		}
-		log.Println("Picture hash: ", hash)
 
-		if ok, err = r.imgCache.QueryImages(hash); !ok || err != nil {
+		if ok, err = r.cache.QueryImages(hash); !ok || err != nil {
 			err = errors.New("Similar photo already exists")
 			ch <- false
 			return
 		}
-
-		log.Printf("Uploaded File: %+v\n", filename)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -93,7 +90,7 @@ func (r *RepositoryPicturesCRUD) Save(picture models.Picture, file *multipart.Fi
 			return
 		}
 
-		id, err = r.imgCache.AddImage(hash, picture.User+filename)
+		id, err = r.cache.AddImage(hash, picture.User+filename)
 		if err != nil {
 			err = errors.New("Unable to hash photo")
 			ch <- false
@@ -101,7 +98,7 @@ func (r *RepositoryPicturesCRUD) Save(picture models.Picture, file *multipart.Fi
 		}
 
 		picture.HashKey = strings.TrimSpace(fmt.Sprint(id))
-		err = r.imgCache.SyncImages()
+		err = r.cache.SyncImages()
 		if err != nil {
 			ch <- false
 			return
@@ -116,12 +113,18 @@ func (r *RepositoryPicturesCRUD) Save(picture models.Picture, file *multipart.Fi
 
 		_, err = r.db.InsertOne(ctx, picture)
 		if err != nil {
-			r.imgCache.DeleteImage(picture.HashKey)
+			r.cache.DeleteImage(picture.HashKey)
 			ch <- false
 			return
 		}
 
-		err = r.imgCache.RedisInstance.Set(picture.ID.Hex(), picture, cacheTime).Err()
+		err = r.cache.RedisInstance.Set(picture.ID.Hex(), picture, cacheTime).Err()
+		if err != nil {
+			ch <- false
+			return
+		}
+
+		err = r.cache.RedisInstance.SAdd(picture.User+"pictures", picture.ID.Hex()).Err()
 		if err != nil {
 			ch <- false
 			return
@@ -156,7 +159,7 @@ func (r *RepositoryPicturesCRUD) FindByID(username string, pictureID string) (mo
 			return
 		}
 
-		str, err = r.imgCache.RedisInstance.Get(objID.Hex()).Result()
+		str, err = r.cache.RedisInstance.Get(objID.Hex()).Result()
 		if err == nil {
 			json.Unmarshal([]byte(str), &picture)
 		} else {
@@ -216,12 +219,12 @@ func (r *RepositoryPicturesCRUD) Delete(username string, idPicture string) (stri
 			return
 		}
 
-		if err = r.imgCache.RedisInstance.Del(picture.ID.Hex()).Err(); err != nil {
+		if err = r.cache.RedisInstance.Del(picture.ID.Hex()).Err(); err != nil {
 			ch <- false
 			return
 		}
 
-		r.imgCache.DeleteImage(picture.HashKey)
+		r.cache.DeleteImage(picture.HashKey)
 		ch <- true
 	}(done)
 
@@ -249,7 +252,6 @@ func (r *RepositoryPicturesCRUD) Update(id string, username string, updates map[
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		log.Println(updates)
 		update := bson.M{"$set": updates}
 		filter := bson.M{
 			"_id":  objID,
@@ -257,13 +259,12 @@ func (r *RepositoryPicturesCRUD) Update(id string, username string, updates map[
 		}
 
 		if err = r.db.FindOneAndUpdate(ctx, filter, update).Decode(&picture); err != nil {
-			log.Println(err)
 			err = errors.New("Error deleting picture, picture not found")
 			ch <- false
 			return
 		}
 
-		err = r.imgCache.RedisInstance.Set(picture.ID.Hex(), picture, cacheTime).Err()
+		err = r.cache.RedisInstance.Set(picture.ID.Hex(), picture, cacheTime).Err()
 		if err != nil {
 			ch <- false
 			return
@@ -276,4 +277,67 @@ func (r *RepositoryPicturesCRUD) Update(id string, username string, updates map[
 	}
 
 	return err
+}
+
+//FindByUser finds all pictures from a user
+func (r *RepositoryPicturesCRUD) FindByUser(username string, setCache bool) ([]models.Picture, error) {
+	var pictures []models.Picture
+	var err error
+	var cursor *mongo.Cursor
+
+	done := make(chan bool)
+	go func(ch chan<- bool) {
+		defer close(ch)
+
+		ids, errz := r.cache.RedisInstance.SMembers(username + "pictures").Result()
+		if errz == nil {
+			for _, id := range ids {
+				pict, errz := r.FindByID(username, id)
+				if errz != nil {
+					err = errz
+					ch <- false
+					return
+				}
+				if setCache || pict.ForSale {
+					pictures = append(pictures, pict)
+				}
+			}
+			ch <- true
+			return
+		}
+
+		filter := bson.M{
+			"$or": []interface{}{
+				bson.M{"for_sale": true},
+				bson.M{"user": username},
+			},
+		}
+
+		cursor, err = r.db.Find(context.Background(), filter)
+		if err != nil {
+			ch <- false
+			return
+		}
+
+		defer cursor.Close(context.Background())
+		cursor.All(context.Background(), &pictures)
+
+		if setCache {
+			for _, pict := range pictures {
+				err := r.cache.RedisInstance.SAdd(username+"pictures", pict.ID.Hex()).Err()
+				if err != nil {
+					log.Println("Set member error: ", err)
+				}
+			}
+		}
+
+		ch <- true
+	}(done)
+
+	if channels.OK(done) {
+		return pictures, nil
+	}
+
+	return []models.Picture{}, err
+
 }

@@ -11,7 +11,7 @@ import (
 type PictureRepository interface {
 	Save(models.Picture, *multipart.File, *multipart.FileHeader) (models.Picture, error)
 	FindByID(string, string) (models.Picture, error)
-	//FindByUser(string) ([]models.Picture, error)
+	FindByUser(string, bool) ([]models.Picture, error)
 	Update(string, string, map[string]string) error
 	Delete(string, string) (string, error)
 }

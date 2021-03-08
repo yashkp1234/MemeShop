@@ -10,13 +10,12 @@ import (
 
 //User is the model that represents a user object
 type User struct {
-	ID        primitive.ObjectID   `json:"id" bson:"_id"`
-	UserName  string               `json:"username" bson:"username"`
-	Password  string               `json:"password" bson:"password"`
-	CreatedAt time.Time            `json:"created_at" bson:"created_at"`
-	UpdatedAt time.Time            `json:"updated_at" bson:"updated_at"`
-	Pictures  []primitive.ObjectID `json:"pictures,omitempty" bson:"pictures,omitempty"`
-	Balance   int32                `json:"balance" bson:"balance"`
+	ID        primitive.ObjectID `json:"id" bson:"_id"`
+	UserName  string             `json:"username" bson:"username"`
+	Password  string             `json:"password" bson:"password"`
+	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
+	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
+	Balance   int32              `json:"balance" bson:"balance"`
 }
 
 const (

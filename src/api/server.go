@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/yashkp1234/MemeShop.git/api/cache"
 	"github.com/yashkp1234/MemeShop.git/api/database"
 	"github.com/yashkp1234/MemeShop.git/api/gcp"
-	"github.com/yashkp1234/MemeShop.git/api/imagecache"
 	"github.com/yashkp1234/MemeShop.git/api/router"
 	"github.com/yashkp1234/MemeShop.git/config"
 )
@@ -19,8 +19,8 @@ func Run() {
 	database.NewDatabase()
 	defer database.CancelDB()
 
-	imagecache.NewImageCacheClient()
-	defer imagecache.Cancel()
+	cache.NewCacheClient()
+	defer cache.Cancel()
 
 	gcp.NewStorageClient()
 	defer gcp.Disconnect()

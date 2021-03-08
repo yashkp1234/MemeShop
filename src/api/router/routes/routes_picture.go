@@ -32,4 +32,10 @@ var PicturesRoutes = []Route{
 		Handler:      controller.DeletePicture,
 		AuthRequired: true,
 	},
+	{
+		URI:          "/pictures/user/{username}",
+		Method:       http.MethodGet,
+		Handler:      controller.GetUserPictures,
+		AuthRequired: false,
+	},
 }

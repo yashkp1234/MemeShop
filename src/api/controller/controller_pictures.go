@@ -8,9 +8,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/yashkp1234/MemeShop.git/api/cache"
 	"github.com/yashkp1234/MemeShop.git/api/database"
 	"github.com/yashkp1234/MemeShop.git/api/gcp"
-	"github.com/yashkp1234/MemeShop.git/api/imagecache"
 	"github.com/yashkp1234/MemeShop.git/api/models"
 	"github.com/yashkp1234/MemeShop.git/api/repository"
 	"github.com/yashkp1234/MemeShop.git/api/repository/crud"
@@ -32,16 +32,12 @@ func GetPicture(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pictureID := vars["pid"]
 
-	username, err := contextkey.GetUsernameFromContext(r)
-	if err != nil {
-		responses.ERROR(w, http.StatusUnprocessableEntity, err)
-		return
-	}
+	username, _ := contextkey.GetUsernameFromContext(r)
 
 	db := database.Connect()
-	imgCache := imagecache.Connect()
+	cache := cache.Connect()
 	imgCloud := gcp.Connect()
-	repo := crud.NewRepositoryPicturesCRUD(db, imgCache, imgCloud)
+	repo := crud.NewRepositoryPicturesCRUD(db, cache, imgCloud)
 
 	func(picturesRepository repository.PictureRepository) {
 		//Find picture
@@ -81,9 +77,9 @@ func CreatePicture(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := database.Connect()
-	imgCache := imagecache.Connect()
+	cache := cache.Connect()
 	imgCloud := gcp.Connect()
-	repo := crud.NewRepositoryPicturesCRUD(db, imgCache, imgCloud)
+	repo := crud.NewRepositoryPicturesCRUD(db, cache, imgCloud)
 
 	func(picturesRepository repository.PictureRepository) {
 		picture, err := picturesRepository.Save(picture, file, handler)
@@ -127,12 +123,12 @@ func UpdatePicture(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := database.Connect()
-	imgCache := imagecache.Connect()
+	cache := cache.Connect()
 	imgCloud := gcp.Connect()
-	repo := crud.NewRepositoryPicturesCRUD(db, imgCache, imgCloud)
+	repo := crud.NewRepositoryPicturesCRUD(db, cache, imgCloud)
 
 	func(picturesRepository repository.PictureRepository) {
-		//Find picture
+		//Update picture
 		err := picturesRepository.Update(id, username, pictureUpdate)
 		if err != nil {
 			responses.ERROR(w, http.StatusUnprocessableEntity, err)
@@ -155,12 +151,12 @@ func DeletePicture(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := database.Connect()
-	imgCache := imagecache.Connect()
+	cache := cache.Connect()
 	imgCloud := gcp.Connect()
-	repo := crud.NewRepositoryPicturesCRUD(db, imgCache, imgCloud)
+	repo := crud.NewRepositoryPicturesCRUD(db, cache, imgCloud)
 
 	func(picturesRepository repository.PictureRepository) {
-		//Find picture
+		//Delete picture
 		id, err := picturesRepository.Delete(username, id)
 		if err != nil {
 			responses.ERROR(w, http.StatusUnprocessableEntity, err)
@@ -169,4 +165,30 @@ func DeletePicture(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Location", fmt.Sprintf("%s%s/%s", r.Host, r.RequestURI, id))
 		responses.JSON(w, http.StatusCreated, id)
 	}(repo)
+}
+
+//GetUserPictures gets all the pictures for a user
+func GetUserPictures(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	searchUsername := vars["username"]
+
+	authUsername, _ := contextkey.GetUsernameFromContext(r)
+
+	db := database.Connect()
+	cache := cache.Connect()
+	imgCloud := gcp.Connect()
+	repo := crud.NewRepositoryPicturesCRUD(db, cache, imgCloud)
+
+	func(picturesRepository repository.PictureRepository) {
+		//Find pictures
+		pictures, err := picturesRepository.FindByUser(searchUsername, searchUsername == authUsername)
+		if err != nil {
+			responses.ERROR(w, http.StatusUnprocessableEntity, err)
+			return
+		}
+
+		w.Header().Set("Location", fmt.Sprintf("%s%s", r.Host, r.RequestURI))
+		responses.JSON(w, http.StatusCreated, pictures)
+	}(repo)
+
 }

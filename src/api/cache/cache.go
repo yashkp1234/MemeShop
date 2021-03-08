@@ -1,4 +1,4 @@
-package imagecache
+package cache
 
 import (
 	"fmt"
@@ -10,22 +10,22 @@ import (
 )
 
 const (
-	//ImageCacheTime is how long something lasts in cache
-	ImageCacheTime = 30 * time.Minute
-	keyName        = "Pictures"
-	threshold      = 20
+	//CacheTime is how long something lasts in cache
+	CacheTime = 30 * time.Minute
+	keyName   = "Pictures"
+	threshold = 20
 )
 
-//ImageCache object to handle caching of images
-type ImageCache struct {
+//Cache object to handle caching of images
+type Cache struct {
 	RedisInstance *redis.Client
 }
 
-//ImageCache represents an image cache
-var imageCache *ImageCache
+//Cache represents an image cache
+var cache *Cache
 
-//NewImageCacheClient setups creating a image cache connection
-func NewImageCacheClient() {
+//NewCacheClient setups creating a image cache connection
+func NewCacheClient() {
 	redisInstance := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "", // no password set
@@ -36,41 +36,41 @@ func NewImageCacheClient() {
 		log.Fatal(err)
 	}
 
-	imageCache = &ImageCache{redisInstance}
+	cache = &Cache{redisInstance}
 }
 
 //Cancel disconnects with the imagecache
 func Cancel() {
-	if err := imageCache.RedisInstance.Close(); err != nil {
+	if err := cache.RedisInstance.Close(); err != nil {
 		log.Fatal(err)
 	}
 }
 
 //Connect returns the connected redis client
-func Connect() *ImageCache {
-	return imageCache
+func Connect() *Cache {
+	return cache
 }
 
 //AddImage adds an image  to redis
-func (c *ImageCache) AddImage(hash interface{}, title interface{}) (string, error) {
+func (c *Cache) AddImage(hash interface{}, title interface{}) (string, error) {
 	id, err := c.RedisInstance.Do("imgscout.add", "Pictures", hash, title).Result()
 	return fmt.Sprint(id), err
 }
 
 //SyncImages syncs all recently added images to redis
-func (c *ImageCache) SyncImages() error {
+func (c *Cache) SyncImages() error {
 	_, err := c.RedisInstance.Do("imgscout.sync", keyName).Result()
 	return err
 }
 
 //DeleteImage deletes an image from redis
-func (c *ImageCache) DeleteImage(id interface{}) error {
+func (c *Cache) DeleteImage(id interface{}) error {
 	_, err := c.RedisInstance.Do("imgscout.del", keyName, id).Result()
 	return err
 }
 
 //DeleteAll deltes all the images
-func (c *ImageCache) DeleteAll(logging bool) error {
+func (c *Cache) DeleteAll(logging bool) error {
 	var MAXVAL uint64 = 9999999999999999999
 	res, err := c.RedisInstance.Do("imgscout.query", keyName, 0, MAXVAL).Result()
 	if err != nil {
@@ -93,7 +93,7 @@ func (c *ImageCache) DeleteAll(logging bool) error {
 }
 
 //QueryImages finds any similar images
-func (c *ImageCache) QueryImages(hashVal interface{}) (bool, error) {
+func (c *Cache) QueryImages(hashVal interface{}) (bool, error) {
 	results, err := c.RedisInstance.Do("imgscout.query", keyName, hashVal, threshold).Result()
 	if err != nil {
 		if err.Error() == "ERR - no such key" {

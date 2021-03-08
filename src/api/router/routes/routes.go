@@ -34,19 +34,12 @@ func SetupRoutes(r *mux.Router) *mux.Router {
 //SetupRoutesWithMiddlewares sets up the routes for mux router
 func SetupRoutesWithMiddlewares(r *mux.Router) *mux.Router {
 	for _, route := range Load() {
-		if route.AuthRequired {
-			r.HandleFunc(route.URI,
-				middlewares.SetMiddlewareLogger(
-					middlewares.SetMiddlewareAuth(
-						middlewares.SetMiddlewareJSON(
-							route.Handler))),
-			).Methods(route.Method)
-		} else {
-			r.HandleFunc(route.URI,
-				middlewares.SetMiddlewareLogger(
-					middlewares.SetMiddlewareJSON(route.Handler)),
-			).Methods(route.Method)
-		}
+		r.HandleFunc(route.URI,
+			middlewares.SetMiddlewareLogger(
+				middlewares.SetMiddlewareAuth(
+					middlewares.SetMiddlewareJSON(route.Handler),
+					route.AuthRequired)),
+		).Methods(route.Method)
 	}
 	return r
 }
