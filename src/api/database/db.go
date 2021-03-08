@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/yashkp1234/MemeShop.git/config"
@@ -36,7 +35,7 @@ func Connect() *mongo.Database {
 func connectToMongo() (*mongo.Database, error) {
 	var err error
 	session, err := mongo.NewClient(options.Client().ApplyURI(config.MongoURL))
-	fmt.Println("Connected with db")
+	log.Println("Connected with db")
 	if err != nil {
 		return nil, err
 	}

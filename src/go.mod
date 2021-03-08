@@ -23,4 +23,5 @@ require (
 	golang.org/x/sys v0.0.0-20210305230114-8fe3ee5dd75b // indirect
 	golang.org/x/text v0.3.5 // indirect
 	google.golang.org/api v0.40.0
+	google.golang.org/appengine v1.6.7
 )

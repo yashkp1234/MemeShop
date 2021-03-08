@@ -70,7 +70,7 @@ func (c *ImageCache) DeleteImage(id interface{}) error {
 }
 
 //DeleteAll deltes all the images
-func (c *ImageCache) DeleteAll(log bool) error {
+func (c *ImageCache) DeleteAll(logging bool) error {
 	var MAXVAL uint64 = 9999999999999999999
 	res, err := c.RedisInstance.Do("imgscout.query", keyName, 0, MAXVAL).Result()
 	if err != nil {
@@ -82,8 +82,8 @@ func (c *ImageCache) DeleteAll(log bool) error {
 	s = strings.ReplaceAll(s, "]", "")
 	t := strings.Split(s, " ")
 	for i := 0; i < len(t); i += 3 {
-		if log {
-			fmt.Println(t[i : i+3])
+		if logging {
+			log.Println(t[i : i+3])
 		}
 		if err := c.DeleteImage(t[i+1]); err != nil {
 			return err
@@ -97,7 +97,7 @@ func (c *ImageCache) QueryImages(hashVal interface{}) (bool, error) {
 	results, err := c.RedisInstance.Do("imgscout.query", keyName, hashVal, threshold).Result()
 	if err != nil {
 		if err.Error() == "ERR - no such key" {
-			fmt.Println("First key")
+			log.Println("First key")
 			return true, nil
 		}
 		return false, err

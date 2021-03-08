@@ -2,7 +2,6 @@ package console
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 )
 
@@ -12,5 +11,5 @@ func Pretty(data interface{}) {
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Println(string(b))
+	log.Println(string(b))
 }

@@ -10,6 +10,7 @@ import (
 	_ "image/jpeg" //Image needs this
 	_ "image/png"  //Image needs this
 	"io"
+	"log"
 	"mime/multipart"
 	"strings"
 	"time"
@@ -73,7 +74,7 @@ func (r *RepositoryPicturesCRUD) Save(picture models.Picture, file *multipart.Fi
 			ch <- false
 			return
 		}
-		fmt.Println(hash)
+		log.Println("Picture hash: ", hash)
 
 		if ok, err = r.imgCache.QueryImages(hash); !ok || err != nil {
 			err = errors.New("Similar photo already exists")
@@ -81,7 +82,7 @@ func (r *RepositoryPicturesCRUD) Save(picture models.Picture, file *multipart.Fi
 			return
 		}
 
-		fmt.Printf("Uploaded File: %+v\n", filename)
+		log.Printf("Uploaded File: %+v\n", filename)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -204,7 +205,7 @@ func (r *RepositoryPicturesCRUD) Delete(username string, idPicture string) (stri
 			"user": username,
 		}
 		if err = r.db.FindOneAndDelete(ctx, filter).Decode(&picture); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			err = errors.New("Error deleting picture, picture not found")
 			ch <- false
 			return
@@ -248,7 +249,7 @@ func (r *RepositoryPicturesCRUD) Update(id string, username string, updates map[
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		fmt.Println(updates)
+		log.Println(updates)
 		update := bson.M{"$set": updates}
 		filter := bson.M{
 			"_id":  objID,
@@ -256,7 +257,7 @@ func (r *RepositoryPicturesCRUD) Update(id string, username string, updates map[
 		}
 
 		if err = r.db.FindOneAndUpdate(ctx, filter, update).Decode(&picture); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			err = errors.New("Error deleting picture, picture not found")
 			ch <- false
 			return

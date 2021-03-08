@@ -25,7 +25,7 @@ func Run() {
 	gcp.NewStorageClient()
 	defer gcp.Disconnect()
 
-	fmt.Printf("Listening on [::]%d ... \n", config.PORT)
+	log.Printf("Listening on [::]%d ... \n", config.PORT)
 	Listen(config.PORT)
 }
 

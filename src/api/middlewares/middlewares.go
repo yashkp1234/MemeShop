@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -12,7 +11,6 @@ import (
 //SetMiddlewareLogger sets up the next middleware logger
 func SetMiddlewareLogger(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("")
 		log.Printf("\n%s %s%s %s", r.Method, r.Host, r.RequestURI, r.Proto)
 		next(w, r)
 	}
